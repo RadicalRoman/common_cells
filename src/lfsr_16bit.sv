@@ -19,19 +19,22 @@
 // Description: Shift register
 //
 module lfsr_16bit #(
-    parameter logic [15:0] SEED  = 8'b0,
+    parameter logic [15:0] SEED  = 16'b0,
     parameter int unsigned WIDTH = 16
 )(
     input  logic                      clk_i,
     input  logic                      rst_ni,
     input  logic                      en_i,
+    input  logic                      force_load,
+    input  logic [WIDTH-1:0]          load_val,
     output logic [WIDTH-1:0]          refill_way_oh,
+    output logic [WIDTH-1:0]          shift_q,
     output logic [$clog2(WIDTH)-1:0]  refill_way_bin
 );
 
     localparam int unsigned LogWidth = $clog2(WIDTH);
 
-    logic [15:0] shift_d, shift_q;
+    logic [15:0] shift_d;
 
 
     always_comb begin
@@ -47,12 +50,14 @@ module lfsr_16bit #(
         // output assignment
         refill_way_oh = 'b0;
         refill_way_oh[shift_q[LogWidth-1:0]] = 1'b1;
-        refill_way_bin = shift_q;
+        refill_way_bin = shift_q; // TODO: width mismatch
     end
 
     always_ff @(posedge clk_i or negedge rst_ni) begin : proc_
         if(~rst_ni) begin
             shift_q <= SEED;
+        end else if (force_load) begin
+            shift_q <= load_val;
         end else begin
             shift_q <= shift_d;
         end
